@@ -48,9 +48,9 @@ def main():
 				pass
 
 			if choice <= 6:
-				a = execute("netsh interface ip set dns "+ adp + f" source = static address={primaryAddress}")
+				a = execute("netsh interface ip set dns " + adp + f" static address={primaryAddress}")
 				if choice <= 5:
-					b = execute("netsh interface ip add dns name=" + adp + f" addr={secondaryAddress} index=2")
+					b = execute("netsh interface ip add dns " + adp + f" addr={secondaryAddress} index=2")
 				print("The DNS {0} has been changed to {1}".format("provider" if choice <= 5 else "address", provider if choice <= 5 else primaryAddress))
 			else:
 				execute("netsh interface ip set dns " + adp + " dhcp")
