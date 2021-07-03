@@ -57,8 +57,8 @@ class Application:
     # Toplevel window for adding
     def Toplevel(self):
         self.toplevel = Toplevel()
-        if self.toplevel.state == "normal": #! need to be check for toplevel running
-            self.toplevel.destroy()
+        self.add_btn.state(['disabled'])
+        self.toplevel.bind('<Destroy>', self.addBtn_state)
         self.toplevel.title("Add DNS")
         self.toplevel.geometry("270x200")
         self.toplevel.resizable(False, False)
@@ -81,6 +81,9 @@ class Application:
     def provider_changes(self, event):
         self.primary_address_var.set(str(self.dns[self.provider_combobox.get()]["Primary Address"]))
         self.secondary_address_var.set(str(self.dns[self.provider_combobox.get()]["Secondary Address"]))
+        
+    def addBtn_state(self, event):
+        self.add_btn['state'] = 'normal'
         
     def Write_on_DNS(self):
         with open('DNS Addresses.json', 'w') as file:
