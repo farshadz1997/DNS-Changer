@@ -232,6 +232,7 @@ class Application:
 def main():
     root = Tk()
     root.title("DNS Changer")
+    root.iconbitmap('Icons/dns.ico')
     root.geometry("400x400")
     root.resizable(False, False)
     connections = list((psutil.net_if_addrs()).keys())
