@@ -1,9 +1,6 @@
 import json
-import threading
 import os, ctypes
 import re
-import sys
-import shutil
 from tkinter import ttk
 from tkinter import messagebox as msg
 from tkinter import *
@@ -18,19 +15,19 @@ class Application:
         self.providers = [provider for provider in self.dns.keys()]
         self.vcmd = (master.register(self.validate))
         Application.GUI(self)
-        self.Check_ip()
         try:
             is_admin = os.getuid() == 0 # this is for unix OS onlly and the in attribute exception is for windows
         except AttributeError:
             is_admin = ctypes.windll.shell32.IsUserAnAdmin() == 1
         if not is_admin:
             msg.showwarning("Admin privliage", "Run the program as administrator")
+        self.Check_ip()
     
     # main window interface    
     def GUI(self):
-        main_label = Label(self.master, text = "DNS Changer", fg = 'red', font = ("Halvetica", 18, "bold")).place(x = 135, y = 10)
+        main_label = Label(self.master, text = "DNS Changer", fg = 'red', font = ("Bahnschrift", 18, "bold")).place(x = 135, y = 10)
         # choose provider
-        provider_label = Label(self.master, text = "Choose provider:", font = ("Halvetica", 11)).place(x = 10, y = 70)
+        provider_label = Label(self.master, text = "Providers:", font = ("Halvetica", 11)).place(x = 10, y = 70)
         self.provider_var = StringVar()
         self.provider_combobox = ttk.Combobox(self.master, textvariable = self.provider_var, values = self.providers, state = "readonly")
         self.provider_combobox.set("Choose a provider")
@@ -53,38 +50,48 @@ class Application:
         self.secondary_address_entry = ttk.Entry(self.master, textvariable = self.secondary_address_var, state = "disabled", validate = 'all',
                                                   validatecommand = (self.vcmd, '%P', '%S', '%i')) 
         self.secondary_address_entry.place(x = 145, y = 192, width = 142)
-        # Buttons from top to bottom
-        self.delete_btn = ttk.Button(self.master, text = "X", command = self.Delete)
-        self.delete_btn.place(x = 295, y = 70, width = 25)
-        self.edit_btn = ttk.Button(self.master, text = "E", command = self.Edit)
-        self.edit_btn.place(x = 292, y = 150, width = 25)
-        self.save_btn = ttk.Button(self.master, text = "S", command = self.Save, state = DISABLED)
-        self.save_btn.place(x = 292, y = 190, width = 25)
-        self.set_btn = ttk.Button(self.master, text = "Set", command = self.Execute) 
-        self.set_btn.place(x = 250, y = 245)
-        self.reset_btn =ttk.Button(self.master, text = "Reset", command = self.Reset)
-        self.reset_btn.place(x = 250, y = 280)
-        self.add_btn = ttk.Button(self.master, text = "Add", command = self.Toplevel)
-        self.add_btn.place(x = 250, y = 315)
-        self.refresh_btn = ttk.Button(self.master, text = 'Refresh', command = self.Check_ip)
-        self.refresh_btn.place(x = 250, y = 350)
+        # Delete button
+        self.delete_icon = PhotoImage(file = r'Icons/delete.png')
+        self.delete_btn = ttk.Button(self.master, text = "Delete", image = self.delete_icon, compound = LEFT, command = self.Delete)
+        self.delete_btn.place(x = 295, y = 70, width = 77, height = 25)
+        # Edit/Save button
+        self.edit_icon = PhotoImage(file = r'Icons/edit15px.png')
+        self.save_icon = PhotoImage(file = r'Icons/save15px.png')
+        self.edit_btn = ttk.Button(self.master, text = "Edit", image = self.edit_icon, compound = LEFT, command = lambda :self.Edit_and_Save(edit = True))
+        self.edit_btn.place(x = 292, y = 150, width = 79, height = 25)
+        # Set button
+        self.set_icon = PhotoImage(file = r'Icons/set15px.png')
+        self.set_btn = ttk.Button(self.master, text = "Set", image = self.set_icon, compound = LEFT, command = self.Execute) 
+        self.set_btn.place(x = 250, y = 245, width = 77, height = 25)
+        # Reset button
+        self.reset_icon = PhotoImage(file = r'Icons/reset15px.png')
+        self.reset_btn =ttk.Button(self.master, text = "Reset", image = self.reset_icon, compound = LEFT, command = self.Reset)
+        self.reset_btn.place(x = 250, y = 280, width = 77, height = 25)
+        # Add button
+        self.add_icon = PhotoImage(file = r'Icons/add15px.png')
+        self.add_btn = ttk.Button(self.master, text = 'Add', image = self.add_icon, compound = LEFT, command = self.Toplevel)
+        self.add_btn.place(x = 250, y = 315, width = 77, height = 25)
+        # Refresh button
+        self.refresh_icon = PhotoImage(file = r'Icons/refresh15px.png')
+        self.refresh_btn = ttk.Button(self.master, text = 'Refresh', image = self.refresh_icon, compound = LEFT, command = self.Check_ip)
+        self.refresh_btn.place(x = 250, y = 350, width = 77, height = 25)
         # labelframe
-        self.labelframe = LabelFrame(self.master, relief = 'sunken').place(x = 10, y = 235, width = 220, height = 150)
-        self.ip_label = Label(self.labelframe, text = 'IP:', font = ('Times', 11)).place(x = 15, y = 242)
-        self.ip = Label(self.labelframe, fg = 'green', font = ('Times', 11))
-        self.ip.place(x = 75, y = 242)
-        self.country_label = Label(self.labelframe, text = 'Country:', font = ('Times', 11)).place(x = 15, y = 272)
-        self.country = Label(self.labelframe, fg = 'green', font = ('Times', 11))
-        self.country.place(x = 75, y = 272)
-        self.region_label = Label(self.labelframe, text = 'Region:', font = ('Times', 11)).place(x = 15, y = 302)
-        self.region = Label(self.labelframe, fg = 'green', font = ('Times', 11))
-        self.region.place(x = 75, y = 302)
-        self.city_label = Label(self.labelframe, text = 'City:', font = ('Times', 11)).place(x = 15, y = 335)
-        self.city = Label(self.labelframe, fg = 'green', font = ('Times', 11))
-        self.city.place(x = 75, y = 332)
-        self.location_label = Label(self.labelframe, text = 'Location:', font = ('Times', 11)).place(x = 15, y = 362)
-        self.location = Label(self.labelframe, fg = 'green', font = ('Times', 11))
-        self.location.place(x = 75, y = 362)
+        self.labelframe = LabelFrame(self.master, background = 'black', relief = 'sunken').place(x = 10, y = 235, width = 220, height = 160)
+        self.ip_label = Label(self.labelframe, text = 'IP:',bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 242)
+        self.ip = Label(self.labelframe,bg = 'black', font = ('Bahnschrift', 11))
+        self.ip.place(x = 80, y = 242)
+        self.country_label = Label(self.labelframe, text = 'Country:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 272)
+        self.country = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.country.place(x = 80, y = 272)
+        self.region_label = Label(self.labelframe, text = 'Region:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 302)
+        self.region = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.region.place(x = 80, y = 302)
+        self.city_label = Label(self.labelframe, text = 'City:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 332)
+        self.city = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.city.place(x = 80, y = 332)
+        self.location_label = Label(self.labelframe, text = 'Location:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 362)
+        self.location = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.location.place(x = 80, y = 362)
 
     # Toplevel window for adding
     def Toplevel(self):
@@ -106,7 +113,8 @@ class Application:
         self.address2_entry = ttk.Entry(self.toplevel, validate = 'all', validatecommand = (self.vcmd, '%P', '%S', '%i'))
         self.address2_entry.place(x = 85, y = 102)
         # Submit
-        submit_btn = ttk.Button(self.toplevel, text = "Submit", command = self.Add)
+        self.submit_icon = PhotoImage(file = r'Icons/apply15px.png')
+        submit_btn = ttk.Button(self.toplevel, text = "Apply", image = self.submit_icon, compound = LEFT, command = self.Add)
         submit_btn.place(x = 105, y = 145, width = 70)
     
     # check validation of user entries in dns fields
@@ -162,24 +170,21 @@ class Application:
         else:
             msg.showerror("Wrong choice", "Choose a correct provider.")
      
-    # edit dns       
-    def Edit(self):
-        if not self.provider_combobox.get() == "Choose a provider":
-            self.edit_btn['state'] = 'disabled'
-            self.primary_address_entry['state'] = 'normal'
-            self.secondary_address_entry['state'] = 'normal'
-            self.save_btn['state'] = 'normal'
+    # edit and save dns addresses    
+    def Edit_and_Save(self, edit:bool):
+        if edit:
+            if not self.provider_combobox.get() == "Choose a provider":
+                self.primary_address_entry['state'] = 'normal'
+                self.secondary_address_entry['state'] = 'normal'
+                self.edit_btn.config(text = 'Save', image = self.save_icon, command = lambda: self.Edit_and_Save(edit = False))
+            else:
+                msg.showwarning('Wrong choice', 'first choose a provider for editing.')
         else:
-            msg.showwarning('Wrong choice', 'first choose a provider for editing.')
-    
-    # after edit, this function save the changes       
-    def Save(self):
-        self.save_btn['state'] = 'disabled'
-        self.edit_btn['state'] = 'normal'
-        self.primary_address_entry['state'] = 'disabled'
-        self.secondary_address_entry['state'] = 'disabled'
-        self.dns.update({self.provider_combobox.get():{"Primary Address": str(self.primary_address_var.get()), "Secondary Address": str(self.secondary_address_var.get())}})
-        self.Write_on_DNS()
+            self.primary_address_entry['state'] = 'disabled'
+            self.secondary_address_entry['state'] = 'disabled'
+            self.dns.update({self.provider_combobox.get():{"Primary Address": str(self.primary_address_var.get()), "Secondary Address": str(self.secondary_address_var.get())}})
+            self.Write_on_DNS()
+            self.edit_btn.config(text = 'Edit', image = self.edit_icon, command = lambda: self.Edit_and_Save(edit = True))
     
     # set dns to connection  
     def Execute(self):
@@ -210,12 +215,17 @@ class Application:
             url = 'http://ipinfo.io/json'
             response = urlopen(url)
             data = json.load(response)
-            self.ip['text'] = data['ip']
-            self.country['text'] = data['country']
-            self.region['text'] = data['region']
-            self.city['text'] = data['city']
-            self.location['text'] = data['loc']
+            self.ip.config(text = data['ip'], fg = 'green')
+            self.country.config(text = data['country'], fg = 'green')
+            self.region.config(text = data['region'], fg = 'green')
+            self.city.config(text = data['city'], fg = 'green')
+            self.location.config(text = data['loc'], fg = 'green')
         except Exception as e:
+            self.ip.config(fg = 'red', text = 'N/A')
+            self.country.config(fg = 'red', text = 'N/A')
+            self.region.config(fg = 'red', text = 'N/A')
+            self.city.config(fg = 'red', text = 'N/A')
+            self.location.config(fg = 'red', text = 'N/A')
             msg.showerror("Error", e)
                    
             
