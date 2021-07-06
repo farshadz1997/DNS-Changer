@@ -55,24 +55,24 @@ class Application:
         self.delete_btn = ttk.Button(self.master, text = "Delete", image = self.delete_icon, compound = LEFT, command = self.Delete)
         self.delete_btn.place(x = 295, y = 70, width = 77, height = 25)
         # Edit/Save button
-        self.edit_icon = PhotoImage(file = r'Icons/edit15px.png')
-        self.save_icon = PhotoImage(file = r'Icons/save15px.png')
+        self.edit_icon = PhotoImage(file = r'Icons/edit.png')
+        self.save_icon = PhotoImage(file = r'Icons/save.png')
         self.edit_btn = ttk.Button(self.master, text = "Edit", image = self.edit_icon, compound = LEFT, command = lambda :self.Edit_and_Save(edit = True))
         self.edit_btn.place(x = 292, y = 150, width = 79, height = 25)
         # Set button
-        self.set_icon = PhotoImage(file = r'Icons/set15px.png')
+        self.set_icon = PhotoImage(file = r'Icons/set.png')
         self.set_btn = ttk.Button(self.master, text = "Set", image = self.set_icon, compound = LEFT, command = self.Execute) 
         self.set_btn.place(x = 250, y = 245, width = 77, height = 25)
         # Reset button
-        self.reset_icon = PhotoImage(file = r'Icons/reset15px.png')
+        self.reset_icon = PhotoImage(file = r'Icons/reset.png')
         self.reset_btn =ttk.Button(self.master, text = "Reset", image = self.reset_icon, compound = LEFT, command = self.Reset)
         self.reset_btn.place(x = 250, y = 280, width = 77, height = 25)
         # Add button
-        self.add_icon = PhotoImage(file = r'Icons/add15px.png')
+        self.add_icon = PhotoImage(file = r'Icons/add.png')
         self.add_btn = ttk.Button(self.master, text = 'Add', image = self.add_icon, compound = LEFT, command = self.Toplevel)
         self.add_btn.place(x = 250, y = 315, width = 77, height = 25)
         # Refresh button
-        self.refresh_icon = PhotoImage(file = r'Icons/refresh15px.png')
+        self.refresh_icon = PhotoImage(file = r'Icons/refresh.png')
         self.refresh_btn = ttk.Button(self.master, text = 'Refresh', image = self.refresh_icon, compound = LEFT, command = self.Check_ip)
         self.refresh_btn.place(x = 250, y = 350, width = 77, height = 25)
         # labelframe
@@ -98,8 +98,12 @@ class Application:
         self.toplevel = Toplevel()
         self.add_btn['state'] = 'disabled'
         self.toplevel.bind('<Destroy>', self.addBtn_state)
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        x = (screen_width/2) - (400/2)
+        y = (screen_height/2) - (400/2)
         self.toplevel.title("Add DNS")
-        self.toplevel.geometry("270x200")
+        self.toplevel.geometry("270x200+%d+%d" % (x, y))
         self.toplevel.resizable(False, False)
         # Provider
         provider_label = Label(self.toplevel, text = "Provider:", font = ("Halvetica", 11)).place(x = 10, y = 20)
@@ -113,10 +117,10 @@ class Application:
         self.address2_entry = ttk.Entry(self.toplevel, validate = 'all', validatecommand = (self.vcmd, '%P', '%S', '%i'))
         self.address2_entry.place(x = 85, y = 102)
         # Submit
-        self.submit_icon = PhotoImage(file = r'Icons/apply15px.png')
+        self.submit_icon = PhotoImage(file = r'Icons/apply.png')
         submit_btn = ttk.Button(self.toplevel, text = "Apply", image = self.submit_icon, compound = LEFT, command = self.Add)
         submit_btn.place(x = 105, y = 145, width = 70)
-    
+          
     # check validation of user entries in dns fields
     def validate(self, P, S, i):
         if int(i) <= 14 and (str.isdigit(P) or P == "" or str.isdigit(S) or str(S) == "."):
@@ -233,7 +237,11 @@ def main():
     root = Tk()
     root.title("DNS Changer")
     root.iconbitmap('Icons/dns.ico')
-    root.geometry("400x400")
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width/2) - (400/2)
+    y = (screen_height/2) - (400/2)
+    root.geometry('400x400+%d+%d' % (x, y))
     root.resizable(False, False)
     connections = list((psutil.net_if_addrs()).keys())
     try:
