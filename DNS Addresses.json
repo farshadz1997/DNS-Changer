@@ -2,13 +2,5 @@
     "Google": {
         "Primary Address": "8.8.8.8",
         "Secondary Address": "8.8.4.4"
-    },
-    "Shecan": {
-        "Primary Address": "178.22.122.100",
-        "Secondary Address": "185.51.200.2"
-    },
-    "Begzar": {
-        "Primary Address": "185.55.226.26",
-        "Secondary Address": "185.55.225.25"
     }
 }
