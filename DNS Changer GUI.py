@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import messagebox as msg
 from tkinter import *
 import psutil
+import subprocess
 from urllib.request import urlopen
 
 class Application:
@@ -13,7 +14,7 @@ class Application:
         self.master = master
         self.connections = connections
         self.providers = [provider for provider in self.dns.keys()]
-        self.vcmd = (master.register(self.validate))
+        self.vcmd = (master.register(self.validate)) # restriction for entry fields
         Application.GUI(self)
         try:
             is_admin = os.getuid() == 0 # this is for unix OS onlly and the in attribute exception is for windows
@@ -21,6 +22,7 @@ class Application:
             is_admin = ctypes.windll.shell32.IsUserAnAdmin() == 1
         if not is_admin:
             msg.showwarning("Admin privliage", "Run the program as administrator")
+        self.Get_DNS()
         self.Check_ip()
     
     # main window interface    
@@ -62,36 +64,45 @@ class Application:
         # Set button
         self.set_icon = PhotoImage(file = r'Icons/set.png')
         self.set_btn = ttk.Button(self.master, text = "Set", image = self.set_icon, compound = LEFT, command = self.Execute) 
-        self.set_btn.place(x = 250, y = 245, width = 77, height = 25)
+        self.set_btn.place(x = 250, y = 254, width = 122, height = 25)
         # Reset button
         self.reset_icon = PhotoImage(file = r'Icons/reset.png')
         self.reset_btn =ttk.Button(self.master, text = "Reset", image = self.reset_icon, compound = LEFT, command = self.Reset)
-        self.reset_btn.place(x = 250, y = 280, width = 77, height = 25)
+        self.reset_btn.place(x = 250, y = 294, width = 122, height = 25)
         # Add button
         self.add_icon = PhotoImage(file = r'Icons/add.png')
         self.add_btn = ttk.Button(self.master, text = 'Add', image = self.add_icon, compound = LEFT, command = self.Toplevel)
-        self.add_btn.place(x = 250, y = 315, width = 77, height = 25)
+        self.add_btn.place(x = 250, y = 334, width = 122, height = 25)
         # Refresh button
         self.refresh_icon = PhotoImage(file = r'Icons/refresh.png')
-        self.refresh_btn = ttk.Button(self.master, text = 'Refresh', image = self.refresh_icon, compound = LEFT, command = self.Check_ip)
-        self.refresh_btn.place(x = 250, y = 350, width = 77, height = 25)
+        self.refresh_btn = ttk.Button(self.master, text = 'Refresh', image = self.refresh_icon, compound = LEFT, command = self.Refresh)
+        self.refresh_btn.place(x = 250, y = 374, width = 122, height = 25)
         # labelframe
-        self.labelframe = LabelFrame(self.master, background = 'black', relief = 'sunken').place(x = 10, y = 235, width = 220, height = 160)
+        self.labelframe = LabelFrame(self.master, background = 'black', relief = 'sunken').place(x = 10, y = 235, width = 220, height = 189)
+        # ip
         self.ip_label = Label(self.labelframe, text = 'IP:',bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 242)
         self.ip = Label(self.labelframe,bg = 'black', font = ('Bahnschrift', 11))
         self.ip.place(x = 80, y = 242)
+        # country
         self.country_label = Label(self.labelframe, text = 'Country:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 272)
         self.country = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.country.place(x = 80, y = 272)
+        # region
         self.region_label = Label(self.labelframe, text = 'Region:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 302)
         self.region = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.region.place(x = 80, y = 302)
+        # city
         self.city_label = Label(self.labelframe, text = 'City:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 332)
         self.city = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.city.place(x = 80, y = 332)
-        self.location_label = Label(self.labelframe, text = 'Location:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 362)
-        self.location = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
-        self.location.place(x = 80, y = 362)
+        # dns 1
+        self.dns1_label = Label(self.labelframe, text = 'DNS 1:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 362)
+        self.dns1 = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.dns1.place(x = 80, y = 362)
+        # dns 2
+        self.dns2_label = Label(self.labelframe, text = 'DNS 2:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 392)
+        self.dns2 = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
+        self.dns2.place(x = 80, y = 392)
 
     # Toplevel window for adding
     def Toplevel(self):
@@ -144,20 +155,32 @@ class Application:
     
     # check fields for adding dns        
     def Add(self):
-        p = self.provider_entry.get()
-        a1 = self.address1_entry.get()
-        a2 = self.address2_entry.get()
+        provider = self.provider_entry.get()
+        dns1 = self.address1_entry.get()
+        dns2 = self.address2_entry.get()
         try:
-            if not (re.search('[a-z]', p) or re.search('[A-Z]', p) or re.search('[0-9]', p)):
+            if not (re.search('[a-zA-z]', provider) or re.search('[0-9]', provider)):
                 msg.showerror("Error", "Please input valid name which contains alphabet or numbers.")
                 return False
-            elif a1 == "" or a2 == "":
-                msg.showwarning("Warning", "Both DNS fields cannot be empty.")
+            elif provider in list(self.dns.keys()):
+                msg.showerror("Error", "Provider already exists.")
+                return False
+            elif re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', dns1):
+                if dns2 == "" or re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', dns2):
+                    pass
+                else:
+                    msg.showerror("Error", "Enter secondary address in correct format.")
+                    return False
+            elif dns1 == "":
+                msg.showerror("Error", "Primary address can not be empty.")
+                return False
+            else:
+                msg.showerror("Error", "Enter primary address in correct format.")
                 return False
         except Exception as e:
             msg.showerror("Error", e)
         else:
-            self.dns.update({self.provider_entry.get():{"Primary Address": str(self.address1_entry.get()), "Secondary Address": str(self.address2_entry.get())}})       
+            self.dns.update({provider:{"Primary Address": dns1, "Secondary Address": dns2}})  
             self.Write_on_DNS()
             self.provider_combobox['values'] = list(self.dns.keys())
             self.toplevel.destroy()
@@ -176,6 +199,8 @@ class Application:
      
     # edit and save dns addresses    
     def Edit_and_Save(self, edit:bool):
+        dns1 = self.primary_address_entry.get()
+        dns2 = self.secondary_address_entry.get()
         if edit:
             if not self.provider_combobox.get() == "Choose a provider":
                 self.primary_address_entry['state'] = 'normal'
@@ -184,23 +209,37 @@ class Application:
             else:
                 msg.showwarning('Wrong choice', 'first choose a provider for editing.')
         else:
-            self.primary_address_entry['state'] = 'disabled'
-            self.secondary_address_entry['state'] = 'disabled'
-            self.dns.update({self.provider_combobox.get():{"Primary Address": str(self.primary_address_var.get()), "Secondary Address": str(self.secondary_address_var.get())}})
-            self.Write_on_DNS()
-            self.edit_btn.config(text = 'Edit', image = self.edit_icon, command = lambda: self.Edit_and_Save(edit = True))
+            if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', dns1):
+                if re.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$', dns2) or dns2 == "":
+                    pass
+                else:
+                    msg.showerror("Error", "Correct secondary address and try again.")
+                    return False
+                self.primary_address_entry['state'] = 'disabled'
+                self.secondary_address_entry['state'] = 'disabled'
+                self.dns.update({self.provider_combobox.get():{
+                    "Primary Address": str(dns1),
+                    "Secondary Address": str(dns2)}})
+                self.Write_on_DNS()
+                self.edit_btn.config(text = 'Edit', image = self.edit_icon, command = lambda: self.Edit_and_Save(edit = True))
+            else:
+                msg.showerror("Error", "Correct primary address and try again.")
+                return False
     
     # set dns to connection  
     def Execute(self):
-        if self.primary_address_var.get() != "" and self.secondary_address_entry.get() != "":
+        dns1 = self.primary_address_var.get()
+        dns2 = self.secondary_address_entry.get()
+        adaptor = self.connections_combobox.get()
+        if dns1 != "":
             try:
-                if self.primary_address_entry.get() != "":
-                    os.system(f"netsh interface ip set dns {str(self.connections_combobox.get())} static address={self.primary_address_var.get()}")
-                if self.secondary_address_entry.get() != "":
-                    os.system(f"netsh interface ip add dns {str(self.connections_combobox.get())} addr={self.secondary_address_entry.get()} index=2")
+                os.system(f"netsh interface ip set dns {adaptor} static address={dns1}")
+                if dns2 != "":
+                    os.system(f"netsh interface ip add dns {adaptor} addr={dns2} index=2")
             except Exception as e:
                 msg.showerror("Error", e)
             else:
+                self.Get_DNS()
                 msg.showinfo("Done", f"The DNS has been changed to {self.provider_combobox.get()}")
         else:
             msg.showerror("Error", "Choose a valid provider or check DNS addresses.")
@@ -208,10 +247,12 @@ class Application:
     # reset dns to default
     def Reset(self):
         try:
-            os.system(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp")
+            subprocess.Popen(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp")
             msg.showinfo("Done", "The DNS provider has been reset to default")
         except Exception as e:
             msg.showerror("Error", e)
+        else:
+            self.Get_DNS()
     
     # check ip details
     def Check_ip(self):
@@ -223,15 +264,42 @@ class Application:
             self.country.config(text = data['country'], fg = 'green')
             self.region.config(text = data['region'], fg = 'green')
             self.city.config(text = data['city'], fg = 'green')
-            self.location.config(text = data['loc'], fg = 'green')
         except Exception as e:
             self.ip.config(fg = 'red', text = 'N/A')
             self.country.config(fg = 'red', text = 'N/A')
             self.region.config(fg = 'red', text = 'N/A')
             self.city.config(fg = 'red', text = 'N/A')
-            self.location.config(fg = 'red', text = 'N/A')
             msg.showerror("Error", e)
-                   
+    
+    # get dns of connection
+    def Get_DNS(self):
+        try:
+            adaptor = self.connections_combobox.get()
+            config = subprocess.check_output(f'netsh interface ipv4 show config name={adaptor}', stdin = subprocess.PIPE, stderr = subprocess.STDOUT).decode()
+            config_list = re.sub(' +', ' ',re.search('Statically Configured DNS Servers:', config).string).split("\n")
+            print(config)
+            primary_dns = False
+            for i in config_list:
+                if primary_dns:
+                    try:   
+                        dns2 = re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', i).group()
+                        self.dns2.config(text = dns2, fg = 'green')
+                        break
+                    except AttributeError:
+                        self.dns2.config(text = 'N/A', fg = 'red')
+                        break
+                if i.startswith(" Statically"):
+                    primary_dns = True
+                    dns1 = re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', i).group()
+                    self.dns1.config(text = dns1, fg = 'green')
+        except AttributeError:
+            self.dns1.config(text = 'N/A', fg = 'red')
+            self.dns2.config(text = 'N/A', fg = 'red')
+    
+    # Refresh dns status and ip details
+    def Refresh(self):
+        self.Get_DNS()
+        self.Check_ip()                      
             
 def main():
     root = Tk()
@@ -241,7 +309,7 @@ def main():
     screen_height = root.winfo_screenheight()
     x = (screen_width/2) - (400/2)
     y = (screen_height/2) - (400/2)
-    root.geometry('400x400+%d+%d' % (x, y))
+    root.geometry('400x440+%d+%d' % (x, y))
     root.resizable(False, False)
     connections = list((psutil.net_if_addrs()).keys())
     try:
