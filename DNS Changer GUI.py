@@ -17,10 +17,10 @@ class Application:
         self.vcmd = (master.register(self.validate)) # restriction for entry fields
         Application.GUI(self)
         try:
-            is_admin = os.getuid() == 0 # this is for unix OS onlly and the in attribute exception is for windows
+            self.is_admin = os.getuid() == 0 # this is for unix OS onlly and the in attribute exception is for windows
         except AttributeError:
-            is_admin = ctypes.windll.shell32.IsUserAnAdmin() == 1
-        if not is_admin:
+            self.is_admin = ctypes.windll.shell32.IsUserAnAdmin() == 1
+        if not self.is_admin:
             msg.showwarning("Admin privliage", "Run the program as administrator")
         self.Get_DNS()
         self.Check_ip()
@@ -111,9 +111,10 @@ class Application:
         self.toplevel.bind('<Destroy>', self.addBtn_state)
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x = (screen_width/2) - (400/2)
-        y = (screen_height/2) - (400/2)
+        x = (screen_width/2) - (400/2 - 65)
+        y = (screen_height/2) - (440/2 - 120) # 65 and 120 is the offset to make the toplevel window places at the center of the root window
         self.toplevel.title("Add DNS")
+        self.toplevel.iconbitmap('Icons/dns.ico')
         self.toplevel.geometry("270x200+%d+%d" % (x, y))
         self.toplevel.resizable(False, False)
         # Provider
@@ -131,6 +132,10 @@ class Application:
         self.submit_icon = PhotoImage(file = r'Icons/apply.png')
         submit_btn = ttk.Button(self.toplevel, text = "Apply", image = self.submit_icon, compound = LEFT, command = self.Add)
         submit_btn.place(x = 105, y = 145, width = 70)
+        # lock the root window until add window closes.
+        self.toplevel.transient()
+        self.toplevel.grab_set()
+        self.master.wait_window()
           
     # check validation of user entries in dns fields
     def validate(self, P, S, i):
@@ -202,7 +207,13 @@ class Application:
         dns1 = self.primary_address_entry.get()
         dns2 = self.secondary_address_entry.get()
         if edit:
-            if not self.provider_combobox.get() == "Choose a provider":
+            if len(self.dns) == 0:
+                msg.showwarning("No provider", "at first, build a DNS profile with add button then you can choose it to edit.")
+            elif not self.provider_combobox.get() == "Choose a provider":
+                self.provider_combobox['state'] = 'disabled'
+                self.delete_btn['state'] = 'disabled'
+                self.set_btn['state'] = 'disabled'
+                self.add_btn['state'] = 'disabled'
                 self.primary_address_entry['state'] = 'normal'
                 self.secondary_address_entry['state'] = 'normal'
                 self.edit_btn.config(text = 'Save', image = self.save_icon, command = lambda: self.Edit_and_Save(edit = False))
@@ -215,6 +226,10 @@ class Application:
                 else:
                     msg.showerror("Error", "Correct secondary address and try again.")
                     return False
+                self.provider_combobox['state'] = 'normal'
+                self.delete_btn['state'] = 'normal'
+                self.set_btn['state'] = 'normal'
+                self.add_btn['state'] = 'normal'
                 self.primary_address_entry['state'] = 'disabled'
                 self.secondary_address_entry['state'] = 'disabled'
                 self.dns.update({self.provider_combobox.get():{
@@ -239,8 +254,11 @@ class Application:
             except Exception as e:
                 msg.showerror("Error", e)
             else:
-                self.Get_DNS()
-                msg.showinfo("Done", f"The DNS has been changed to {self.provider_combobox.get()}")
+                if not self.is_admin:
+                    msg.showwarning("Admin privileges", "The requested operation requires elevation (Run as administrator).")
+                else:
+                    self.Get_DNS()
+                    msg.showinfo("Done", f"The DNS has been changed to {self.provider_combobox.get()}")
         else:
             msg.showerror("Error", "Choose a valid provider or check DNS addresses.")
     
