@@ -265,8 +265,12 @@ class Application:
     # reset dns to default
     def Reset(self):
         try:
-            subprocess.Popen(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp")
-            msg.showinfo("Done", "The DNS provider has been reset to default")
+            if self.is_admin:
+                subprocess.Popen(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp")
+                msg.showinfo("Done", "The DNS provider has been reset to default")
+            else:
+                msg.showwarning("Admin privileges", "The requested operation requires elevation (Run as administrator).")
+                return False
         except Exception as e:
             msg.showerror("Error", e)
         else:
@@ -346,6 +350,6 @@ def main():
         DNSs = json.load(open("DNS Addresses.json", "r"))
     app = Application(root, DNSs, connections)
     root.mainloop()
-    
+
 if __name__ == "__main__":
     main()
