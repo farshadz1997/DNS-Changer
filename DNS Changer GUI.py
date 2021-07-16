@@ -226,7 +226,7 @@ class Application:
                 else:
                     msg.showerror("Error", "Correct secondary address and try again.")
                     return False
-                self.provider_combobox['state'] = 'normal'
+                self.provider_combobox['state'] = 'readonly'
                 self.delete_btn['state'] = 'normal'
                 self.set_btn['state'] = 'normal'
                 self.add_btn['state'] = 'normal'
