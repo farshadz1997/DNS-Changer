@@ -299,7 +299,6 @@ class Application:
             adaptor = self.connections_combobox.get()
             config = subprocess.check_output(f'netsh interface ipv4 show config name={adaptor}', stdin = subprocess.PIPE, stderr = subprocess.STDOUT).decode()
             config_list = re.sub(' +', ' ',re.search('Statically Configured DNS Servers:', config).string).split("\n")
-            print(config)
             primary_dns = False
             for i in config_list:
                 if primary_dns:
