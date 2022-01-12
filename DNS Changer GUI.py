@@ -6,7 +6,7 @@ from tkinter import messagebox as msg
 from tkinter import *
 import psutil
 import subprocess
-from urllib.request import urlopen
+from urllib.request import urlopen, HTTPError
 
 class Application:
     def __init__(self, master, DNS: dict, connections: list):
@@ -96,11 +96,11 @@ class Application:
         self.city = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.city.place(x = 80, y = 332)
         # dns 1
-        self.dns1_label = Label(self.labelframe, text = 'DNS 1:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 362)
+        self.dns1_label = Label(self.labelframe, text = 'DNS #1:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 362)
         self.dns1 = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.dns1.place(x = 80, y = 362)
         # dns 2
-        self.dns2_label = Label(self.labelframe, text = 'DNS 2:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 392)
+        self.dns2_label = Label(self.labelframe, text = 'DNS #2:', bg = 'black', fg = 'white', font = ('Bahnschrift', 11)).place(x = 15, y = 392)
         self.dns2 = Label(self.labelframe, bg = 'black', font = ('Bahnschrift', 11))
         self.dns2.place(x = 80, y = 392)
 
@@ -248,9 +248,9 @@ class Application:
         adaptor = self.connections_combobox.get()
         if dns1 != "":
             try:
-                os.system(f"netsh interface ip set dns {adaptor} static address={dns1}")
+                subprocess.call(f"netsh interface ip set dns {adaptor} static address={dns1}",stdin=None, stdout=None, stderr=None, shell=True)
                 if dns2 != "":
-                    os.system(f"netsh interface ip add dns {adaptor} addr={dns2} index=2")
+                    subprocess.call(f"netsh interface ip add dns {adaptor} addr={dns2} index=2",stdin=None, stdout=None, stderr=None, shell=True)
             except Exception as e:
                 msg.showerror("Error", e)
             else:
@@ -266,7 +266,7 @@ class Application:
     def Reset(self):
         try:
             if self.is_admin:
-                subprocess.Popen(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp")
+                subprocess.call(f"netsh interface ip set dns {self.connections_combobox.get()} dhcp",stdin=None, stdout=None, stderr=None, shell=True)
                 msg.showinfo("Done", "The DNS provider has been reset to default")
             else:
                 msg.showwarning("Admin privileges", "The requested operation requires elevation (Run as administrator).")
@@ -290,14 +290,14 @@ class Application:
             self.ip.config(fg = 'red', text = 'N/A')
             self.country.config(fg = 'red', text = 'N/A')
             self.region.config(fg = 'red', text = 'N/A')
-            self.city.config(fg = 'red', text = 'N/A')
-            msg.showerror("Error", e)
+            self.city.config(fg = 'red', text = 'N/A')    
+            msg.showerror("Error", e)    
     
     # get dns of connection
     def Get_DNS(self):
         try:
             adaptor = self.connections_combobox.get()
-            config = subprocess.check_output(f'netsh interface ipv4 show config name={adaptor}', stdin = subprocess.PIPE, stderr = subprocess.STDOUT).decode()
+            config = subprocess.check_output(f'netsh interface ipv4 show config name={adaptor}', stdin = subprocess.PIPE, stderr = subprocess.STDOUT, shell = True).decode()
             config_list = re.sub(' +', ' ',re.search('Statically Configured DNS Servers:', config).string).split("\n")
             primary_dns = False
             for i in config_list:
